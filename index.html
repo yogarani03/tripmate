@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>TripMate - Search Trips</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>TripMate</h1>
+
+<div class="box">
+<h2>Search Trips</h2>
+
+<select id="source">
+  <option value="">Select Source</option>
+  <option>Chennai</option>
+  <option>Delhi</option>
+  <option>Mumbai</option>
+  <option>Bangalore</option>
+  <option>Hyderabad</option>
+  <option>Kolkata</option>
+</select><br>
+
+<select id="destination">
+  <option value="">Select Destination</option>
+  <option>Chennai</option>
+  <option>Delhi</option>
+  <option>Mumbai</option>
+  <option>Bangalore</option>
+  <option>Hyderabad</option>
+  <option>Kolkata</option>
+</select><br>
+
+<p id="error"></p>
+
+<button onclick="searchTrips()">Search</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
