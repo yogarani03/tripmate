@@ -1,61 +1,79 @@
 // ---------------- MOCK DATA ----------------
+
 const trips = [
     { type: "Bus", price: 1000 },
     { type: "Train", price: 800 },
     { type: "Flight", price: 3000 }
 ];
 
-// ---------------- BOOKING ID ----------------
-function generateBookingId() {
-    return "TM" + Math.floor(1000 + Math.random() * 9000);
-}
-
 // ---------------- SEARCH ----------------
+
 function searchTrips() {
 
     let source = document.getElementById("source").value;
     let destination = document.getElementById("destination").value;
+
     let error = document.getElementById("error");
 
     if (!source || !destination) {
-        error.innerText = "Please select both source and destination";
+
+        error.innerText =
+            "Please select both source and destination";
+
         return;
     }
 
     if (source === destination) {
-        error.innerText = "Source and Destination cannot be same";
+
+        error.innerText =
+            "Source and Destination cannot be same";
+
         return;
     }
 
     error.innerText = "";
 
-    localStorage.setItem("searchData", JSON.stringify({ source, destination }));
+    localStorage.setItem(
+        "searchData",
+        JSON.stringify({ source, destination })
+    );
+
     window.location.href = "results.html";
 }
 
-// ---------------- RESULTS ----------------
-if (document.getElementById("list")) {
+// ---------------- RESULTS PAGE ----------------
 
-    let searchData = JSON.parse(localStorage.getItem("searchData"));
+if (window.location.pathname.includes("results.html")) {
+
+    let searchData =
+        JSON.parse(localStorage.getItem("searchData"));
 
     if (!searchData) {
-        document.body.innerHTML = "<h2>No Search Data</h2>";
+
+        document.body.innerHTML =
+            "<h2>No Search Data Found</h2>";
+
     } else {
 
         document.getElementById("route").innerText =
-            searchData.source + " → " + searchData.destination;
+            `${searchData.source} → ${searchData.destination}`;
 
         let list = document.getElementById("list");
 
-        trips.forEach(t => {
+        trips.forEach((trip) => {
 
             let div = document.createElement("div");
+
             div.className = "trip";
 
             div.innerHTML = `
                 <p>${searchData.source} → ${searchData.destination}</p>
-                <p>${t.type} - Rs. ${t.price}</p>
-                <button onclick="book(${t.price})">Book</button>
+
+                <p>${trip.type} - Rs. ${trip.price}</p>
+
+                <button onclick="book(${trip.price})">
+                    Book
+                </button>
             `;
 
             list.appendChild(div);
@@ -64,113 +82,174 @@ if (document.getElementById("list")) {
 }
 
 // ---------------- BOOK ----------------
+
 function book(price) {
 
-    let searchData = JSON.parse(localStorage.getItem("searchData"));
+    let searchData =
+        JSON.parse(localStorage.getItem("searchData"));
 
     let booking = {
-        id: generateBookingId(),
-        route: searchData.source + " → " + searchData.destination,
+
+        route:
+            `${searchData.source} → ${searchData.destination}`,
+
         price: price,
-        status: "Pending"
+
+        status: "Pending",
+
+        date: new Date().toLocaleString()
     };
 
-    localStorage.setItem("bookingData", JSON.stringify(booking));
+    // Existing history
+    let history =
+        JSON.parse(localStorage.getItem("bookingHistory")) || [];
+
+    history.push(booking);
+
+    localStorage.setItem(
+        "bookingHistory",
+        JSON.stringify(history)
+    );
+
+    localStorage.setItem(
+        "latestBooking",
+        JSON.stringify(booking)
+    );
+
     window.location.href = "booking.html";
 }
 
 // ---------------- BOOKING PAGE ----------------
-if (document.getElementById("bookingId")) {
 
-    let bookingData = JSON.parse(localStorage.getItem("bookingData"));
+if (window.location.pathname.includes("booking.html")) {
+
+    let bookingData =
+        JSON.parse(localStorage.getItem("latestBooking"));
 
     if (bookingData) {
-        document.getElementById("bookingId").innerText = "Booking ID: " + bookingData.id;
-        document.getElementById("route").innerText = bookingData.route;
-        document.getElementById("price").innerText = "Price: Rs. " + bookingData.price;
+
+        document.getElementById("route").innerText =
+            bookingData.route;
+
+        document.getElementById("price").innerText =
+            "Price: Rs. " + bookingData.price;
     }
 }
 
-// ---------------- SAVE HISTORY ----------------
-function saveToHistory(booking) {
+// ---------------- CONFIRM BOOKING ----------------
 
-    let bookings = JSON.parse(localStorage.getItem("allBookings")) || [];
-    bookings.push(booking);
-    localStorage.setItem("allBookings", JSON.stringify(bookings));
-}
-
-// ---------------- CONFIRM ----------------
 function confirmBooking() {
 
-    let bookingData = JSON.parse(localStorage.getItem("bookingData"));
+    let bookingData =
+        JSON.parse(localStorage.getItem("latestBooking"));
+
     bookingData.status = "Confirmed";
 
-    localStorage.setItem("bookingData", JSON.stringify(bookingData));
-    saveToHistory(bookingData);
+    localStorage.setItem(
+        "latestBooking",
+        JSON.stringify(bookingData)
+    );
 
-    document.getElementById("msg").innerText = "Booking Confirmed ✅";
+    let history =
+        JSON.parse(localStorage.getItem("bookingHistory")) || [];
 
-    setTimeout(() => {
-        window.location.href = "itinerary.html";
-    }, 1000);
-}
+    history[history.length - 1] = bookingData;
 
-// ---------------- CANCEL ----------------
-function cancelBooking() {
-
-    let bookingData = JSON.parse(localStorage.getItem("bookingData"));
-
-    let refund = bookingData.price * 0.9;
-    bookingData.status = "Cancelled";
-
-    localStorage.setItem("bookingData", JSON.stringify(bookingData));
-    saveToHistory(bookingData);
+    localStorage.setItem(
+        "bookingHistory",
+        JSON.stringify(history)
+    );
 
     document.getElementById("msg").innerText =
-        "Booking Cancelled ❌ Refund: Rs. " + refund;
+        "Booking Confirmed Successfully";
 
     setTimeout(() => {
+
         window.location.href = "itinerary.html";
+
     }, 1000);
 }
 
-// ---------------- ITINERARY ----------------
-if (document.getElementById("itineraryList")) {
+// ---------------- CANCEL BOOKING ----------------
 
-    let bookings = JSON.parse(localStorage.getItem("allBookings")) || [];
-    let latest = JSON.parse(localStorage.getItem("bookingData"));
+function cancelBooking() {
 
-    let latestDiv = document.getElementById("latestBooking");
-    let container = document.getElementById("itineraryList");
+    let bookingData =
+        JSON.parse(localStorage.getItem("latestBooking"));
 
-    // Latest booking
-    if (latest) {
-        latestDiv.innerHTML = `
-            <div class="trip">
-                <p><strong>ID:</strong> ${latest.id}</p>
-                <p>${latest.route}</p>
-                <p>Price: Rs. ${latest.price}</p>
-                <p>Status: ${latest.status}</p>
-            </div>
-        `;
-    }
+    let refund =
+        bookingData.price -
+        (bookingData.price * 0.1);
 
-    // History
-    if (bookings.length === 0) {
-        container.innerHTML = "<p>No previous bookings</p>";
+    bookingData.status = "Cancelled";
+
+    localStorage.setItem(
+        "latestBooking",
+        JSON.stringify(bookingData)
+    );
+
+    let history =
+        JSON.parse(localStorage.getItem("bookingHistory")) || [];
+
+    history[history.length - 1] = bookingData;
+
+    localStorage.setItem(
+        "bookingHistory",
+        JSON.stringify(history)
+    );
+
+    document.getElementById("msg").innerText =
+        `Booking Cancelled. Refund Amount: Rs. ${refund}`;
+
+    setTimeout(() => {
+
+        window.location.href = "itinerary.html";
+
+    }, 1000);
+}
+
+// ---------------- ITINERARY PAGE ----------------
+
+if (window.location.pathname.includes("itinerary.html")) {
+
+    let bookingData =
+        JSON.parse(localStorage.getItem("latestBooking"));
+
+    let history =
+        JSON.parse(localStorage.getItem("bookingHistory")) || [];
+
+    if (!bookingData) {
+
+        document.body.innerHTML =
+            "<h2>No Booking Data Found</h2>";
+
     } else {
-        bookings.forEach(b => {
-            let div = document.createElement("div");
-            div.className = "trip";
 
-            div.innerHTML = `
-                <p><strong>ID:</strong> ${b.id}</p>
-                <p>${b.route}</p>
-                <p>Price: Rs. ${b.price}</p>
-                <p>Status: ${b.status}</p>
+        document.getElementById("route").innerText =
+            bookingData.route;
+
+        document.getElementById("price").innerText =
+            "Price: Rs. " + bookingData.price;
+
+        document.getElementById("status").innerText =
+            "Status: " + bookingData.status;
+
+        let historyHTML =
+            "<h3>Booking History</h3>";
+
+        history.slice().reverse().forEach((b) => {
+
+            historyHTML += `
+                <div class="trip">
+                    <p>${b.route}</p>
+                    <p>Price: Rs. ${b.price}</p>
+                    <p>Status: ${b.status}</p>
+                    <p>${b.date}</p>
+                </div>
             `;
-
-            container.appendChild(div);
         });
+
+        document.getElementById("history").innerHTML =
+            historyHTML;
     }
 }
